@@ -1,0 +1,56 @@
+#include <windows.h>
+#include <stdio.h>
+#include <tchar.h>
+
+#define BUFSIZE 4096 
+
+int main(void)
+{
+	CHAR chBuf[BUFSIZE];
+	DWORD dwRead, dwWritten;
+	HANDLE hStdin, hStdout;
+	BOOL bSuccess;
+
+	//자신의 STDIN/OUT 핸들 가지고 오기
+	hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+	hStdin = GetStdHandle(STD_INPUT_HANDLE);
+	if ((hStdout == INVALID_HANDLE_VALUE) || (hStdin == INVALID_HANDLE_VALUE))
+		ExitProcess(1);
+
+	// 출력 형태 / 입력 형태
+	CHAR readForm[] = "[Child Process][Recieve] : ";
+	CHAR writeForm[] = "[Child Process][Send] : ";
+
+	// STDOUT으로 출력된 모든 부분은 부모의 console에 출력
+	CHAR start[] = "\n ** This is a message from the child process. ** \n";
+	WriteFile(hStdout, start, strlen(start), &dwWritten, NULL);
+	for (;;)
+	{
+		// printf("[Child Process][Send] : %s", chBuf);
+		bSuccess = WriteFile(hStdout, readForm, strlen(readForm), &dwWritten, NULL); // [Child Process][Recieve] : 
+		if (!bSuccess) break;
+
+		// STDIN으로 들어오는 데이터 버퍼에 저장
+		bSuccess = ReadFile(hStdin, chBuf, BUFSIZE, &dwRead, NULL);
+		if (!bSuccess || strcmp(chBuf, "quit") == 1 || dwRead == 0)
+			break;
+		bSuccess = WriteFile(hStdout, chBuf, dwRead, &dwWritten, NULL); // Data
+		if (!bSuccess) break;
+		bSuccess = WriteFile(hStdout, "\n", 1, &dwWritten, NULL); // \n
+		if (!bSuccess) break;
+
+		// printf("[Child Process][Send] : ");
+		bSuccess = WriteFile(hStdout, writeForm, strlen(writeForm), &dwWritten, NULL); // [Child Process][Send] : 
+		if (!bSuccess) break;
+		scanf("%s", chBuf);
+		dwRead = strlen(chBuf);
+		// STDOUT 핸들에 chBuf 내용 쓰기
+		bSuccess = WriteFile(hStdout, chBuf, dwRead, &dwWritten, NULL);
+		if (!bSuccess) break;
+	}
+	// STDOUT 핸들에 chBuf 내용 쓰기
+	char end[] = "\n child process end \n";
+	bSuccess = WriteFile(hStdout, end, strlen(end), &dwWritten, NULL);
+
+	return 0;
+}

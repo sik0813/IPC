@@ -1,0 +1,155 @@
+#include <windows.h> 
+#include <tchar.h>
+#include <stdio.h> 
+#include <strsafe.h>
+#include <conio.h>
+
+#define BUFSIZE 4096 
+
+HANDLE g_hChildStd_IN_Rd = NULL;
+HANDLE g_hChildStd_IN_Wr = NULL;
+HANDLE g_hChildStd_OUT_Rd = NULL;
+HANDLE g_hChildStd_OUT_Wr = NULL;
+
+HANDLE g_hInputFile = NULL;
+
+void CreateChildProcess(void);
+void ReadWrite(void);
+void ErrorExit(PTSTR);
+
+int _tmain(int argc, TCHAR *argv[])
+{
+	SECURITY_ATTRIBUTES saAttr;
+
+	printf("\n->Start of parent execution.\n");
+
+	// 상속가능으로 설정하고 파이프 핸들을 상속한다.
+	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+	saAttr.bInheritHandle = TRUE;
+	saAttr.lpSecurityDescriptor = NULL;
+
+	// 자식 프로세스의 STDOUT에 대한 Pipe 생성
+	if (!CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0))
+		ErrorExit(TEXT("StdoutRd CreatePipe"));
+
+	// STDOUT의 read handle에 대해서 상속되지 않았는지 확인
+	if (!SetHandleInformation(g_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0))
+		ErrorExit(TEXT("Stdout SetHandleInformation"));
+
+	// 자식 프로세스의 STDIN에 대한 Pipe 생성 
+	if (!CreatePipe(&g_hChildStd_IN_Rd, &g_hChildStd_IN_Wr, &saAttr, 0))
+		ErrorExit(TEXT("Stdin CreatePipe"));
+
+	// STDIN의 write handle에 대해서 상속되지 않았는지 확인
+	if (!SetHandleInformation(g_hChildStd_IN_Wr, HANDLE_FLAG_INHERIT, 0))
+		ErrorExit(TEXT("Stdin SetHandleInformation"));
+
+	// STDIN/OUT 핸들을 넣어서 자식 프로세스 생성
+	CreateChildProcess();
+	
+	TCHAR fileName[100] = _T("test.txt");
+	if (argc != 1) StringCchCopy(fileName, sizeof(argv[1]), argv[1]);
+
+	// 파일 읽어서 자식한테 넘겨 주고 다시 받는
+	g_hInputFile = CreateFile(
+		fileName,
+		GENERIC_READ,
+		0,
+		NULL,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_READONLY,
+		NULL);
+
+	if (g_hInputFile == INVALID_HANDLE_VALUE)
+		ErrorExit(TEXT("CreateFile"));
+
+	// 자식의 STDIN/OUT과 통신
+	ReadWrite();
+
+	wprintf(L"\n->End of parent execution.\n");
+	getch();
+	return 0;
+}
+
+void CreateChildProcess()
+{
+	TCHAR szCmdline[] = TEXT("stdC");
+	PROCESS_INFORMATION piProcInfo = { 0, }; // PROCESS_INFORMATION 0으로 초기화
+	STARTUPINFO siStartInfo = { sizeof(STARTUPINFO), }; // STARTUPINFO 0으로 초기화
+	BOOL bSuccess = FALSE;
+
+	// STARTUPINFO 값 설정
+	siStartInfo.hStdError = g_hChildStd_OUT_Wr; // stdout에 대한 pipe의 write 부분 지정
+	siStartInfo.hStdOutput = g_hChildStd_OUT_Wr; // stdout에 대한 pipe의 write 부분 지정
+	siStartInfo.hStdInput = g_hChildStd_IN_Rd; // stdin에 대한 pipe의 read 부분 지정
+	siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
+	
+	// Create the child process. 
+	bSuccess = CreateProcess(NULL,
+		szCmdline,     // command line 
+		NULL,          // process security attributes
+		NULL,          // primary thread security attributes 
+		TRUE,          // handles are inherited 
+		CREATE_NEW_CONSOLE,             // creation flags 
+		NULL,          // use parent's environment 
+		NULL,          // use parent's current directory 
+		&siStartInfo,  // STARTUPINFO
+		&piProcInfo);  // PROCESS_INFORMATION 
+	
+	if (!bSuccess)
+		ErrorExit(TEXT("CreateProcess"));
+	else
+	{
+		// 자식 프로세스가 바로 종료 되도록 Process, Thread, stdout/in
+		CloseHandle(piProcInfo.hProcess);
+		CloseHandle(piProcInfo.hThread);
+		CloseHandle(g_hChildStd_OUT_Wr);
+		CloseHandle(g_hChildStd_IN_Rd);
+	}
+}
+
+void ReadWrite(void)
+{
+	DWORD dwRead, dwWritten;
+	CHAR chBuf[BUFSIZE];
+	BOOL bSuccess = FALSE;
+	HANDLE hParentStdOut = GetStdHandle(STD_OUTPUT_HANDLE); // 부모의 화면 STDOUT
+
+	for (;;)
+	{
+		// 파일 읽어서 chBuf에 저장하고 읽은 크기를 dwRead에 저장
+		//bSuccess = ReadFile(g_hInputFile, chBuf, BUFSIZE, &dwRead, NULL);
+		//if (!bSuccess || dwRead == 0) break;
+		printf("[Parent][Send] : ");
+		scanf("%s", chBuf);		
+		dwRead = strlen(chBuf);
+		// 자식 프로세스로 STDIN으로 정보 던지기
+		// stdin pipe의 write handle에 버퍼 내용과 크기 넣고 쓴 크기 dwWritten에 반환
+		bSuccess = WriteFile(g_hChildStd_IN_Wr, chBuf, dwRead, &dwWritten, NULL);
+		if (!bSuccess) break;
+
+		// quit 입력시 자식에게 전송하고 종료
+		if (strcmp(chBuf, "quit") == TRUE) break;
+
+		// 자식에서 STDOUT으로 나오는 정보 가져오기
+		bSuccess = ReadFile(g_hChildStd_OUT_Rd, chBuf, BUFSIZE, &dwRead, NULL);
+		if (!bSuccess || dwRead == 0) break;
+		printf("[Parent][Receive] : ");
+		// 부모의 화면에 출력
+		bSuccess = WriteFile(hParentStdOut, chBuf, dwRead, &dwWritten, NULL);
+		puts("");
+		if (!bSuccess) break;
+	}
+
+	// 자식 프로세스에 다보냈으면 핸들 닫기
+	if (!CloseHandle(g_hChildStd_IN_Wr))
+		ErrorExit(TEXT("StdInWr CloseHandle"));
+}
+
+void ErrorExit(PTSTR lpszFunction)
+{
+	DWORD dw = GetLastError();
+	printf("%s | error code : %d", lpszFunction, dw);
+	getch();
+	ExitProcess(1);
+}
