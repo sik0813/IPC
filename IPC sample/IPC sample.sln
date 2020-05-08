@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PipeServer", "PipeServer\PipeServer.vcxproj", "{434F7DEC-78E7-48A1-9637-1601174ADA2E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PipeClient", "PipeClient\PipeClient.vcxproj", "{5567659A-D2EB-4EDB-8EAE-D03212D05E88}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "stdP", "stdP\stdP.vcxproj", "{48025780-589A-4F96-A96B-70F2C93060B7}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "stdC", "stdC\stdC.vcxproj", "{25413D3C-34FB-46E8-9C30-A8BE5D87F1A4}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MailSlotA", "MailSlotA\MailSlotA.vcxproj", "{EB169891-40D3-4964-A6B7-796A79FCE3FF}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MailSlotB", "MailSlotB\MailSlotB.vcxproj", "{5CF75DB0-AC54-48BB-9F5B-7A6FB74613F4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{434F7DEC-78E7-48A1-9637-1601174ADA2E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{434F7DEC-78E7-48A1-9637-1601174ADA2E}.Debug|Win32.Build.0 = Debug|Win32
+		{434F7DEC-78E7-48A1-9637-1601174ADA2E}.Release|Win32.ActiveCfg = Release|Win32
+		{434F7DEC-78E7-48A1-9637-1601174ADA2E}.Release|Win32.Build.0 = Release|Win32
+		{5567659A-D2EB-4EDB-8EAE-D03212D05E88}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5567659A-D2EB-4EDB-8EAE-D03212D05E88}.Debug|Win32.Build.0 = Debug|Win32
+		{5567659A-D2EB-4EDB-8EAE-D03212D05E88}.Release|Win32.ActiveCfg = Release|Win32
+		{5567659A-D2EB-4EDB-8EAE-D03212D05E88}.Release|Win32.Build.0 = Release|Win32
+		{48025780-589A-4F96-A96B-70F2C93060B7}.Debug|Win32.ActiveCfg = Debug|Win32
+		{48025780-589A-4F96-A96B-70F2C93060B7}.Debug|Win32.Build.0 = Debug|Win32
+		{48025780-589A-4F96-A96B-70F2C93060B7}.Release|Win32.ActiveCfg = Release|Win32
+		{48025780-589A-4F96-A96B-70F2C93060B7}.Release|Win32.Build.0 = Release|Win32
+		{25413D3C-34FB-46E8-9C30-A8BE5D87F1A4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{25413D3C-34FB-46E8-9C30-A8BE5D87F1A4}.Debug|Win32.Build.0 = Debug|Win32
+		{25413D3C-34FB-46E8-9C30-A8BE5D87F1A4}.Release|Win32.ActiveCfg = Release|Win32
+		{25413D3C-34FB-46E8-9C30-A8BE5D87F1A4}.Release|Win32.Build.0 = Release|Win32
+		{EB169891-40D3-4964-A6B7-796A79FCE3FF}.Debug|Win32.ActiveCfg = Debug|Win32
+		{EB169891-40D3-4964-A6B7-796A79FCE3FF}.Debug|Win32.Build.0 = Debug|Win32
+		{EB169891-40D3-4964-A6B7-796A79FCE3FF}.Release|Win32.ActiveCfg = Release|Win32
+		{EB169891-40D3-4964-A6B7-796A79FCE3FF}.Release|Win32.Build.0 = Release|Win32
+		{5CF75DB0-AC54-48BB-9F5B-7A6FB74613F4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5CF75DB0-AC54-48BB-9F5B-7A6FB74613F4}.Debug|Win32.Build.0 = Debug|Win32
+		{5CF75DB0-AC54-48BB-9F5B-7A6FB74613F4}.Release|Win32.ActiveCfg = Release|Win32
+		{5CF75DB0-AC54-48BB-9F5B-7A6FB74613F4}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

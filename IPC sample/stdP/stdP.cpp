@@ -14,7 +14,7 @@ HANDLE g_hChildStd_OUT_Wr = NULL;
 HANDLE g_hInputFile = NULL;
 
 void CreateChildProcess(void);
-void WriteToPipe(PCHAR fileName);
+void WriteToPipe(PTSTR fileName);
 void ReadFromPipe(void);
 void ErrorExit(PTSTR);
 
@@ -31,42 +31,43 @@ int _tmain(int argc, TCHAR *argv[])
 
 	// 자식 프로세스의 STDOUT에 대한 Pipe 생성
 	if (!CreatePipe(&g_hChildStd_OUT_Rd, &g_hChildStd_OUT_Wr, &saAttr, 0))
-		ErrorExit(TEXT("StdoutRd CreatePipe"));
+		ErrorExit(_T("StdoutRd CreatePipe"));
 
 	// STDOUT의 read handle에 대해서 상속되지 않았는지 확인
 	if (!SetHandleInformation(g_hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0))
-		ErrorExit(TEXT("Stdout SetHandleInformation"));
+		ErrorExit(_T("Stdout SetHandleInformation"));
 
 	// 자식 프로세스의 STDIN에 대한 Pipe 생성 
 	if (!CreatePipe(&g_hChildStd_IN_Rd, &g_hChildStd_IN_Wr, &saAttr, 0))
-		ErrorExit(TEXT("Stdin CreatePipe"));
+		ErrorExit(_T("Stdin CreatePipe"));
 
 	// STDIN의 write handle에 대해서 상속되지 않았는지 확인
 	if (!SetHandleInformation(g_hChildStd_IN_Wr, HANDLE_FLAG_INHERIT, 0))
-		ErrorExit(TEXT("Stdin SetHandleInformation"));
+		ErrorExit(_T("Stdin SetHandleInformation"));
 
 	// STDIN/OUT 핸들을 넣어서 자식 프로세스 생성
 	CreateChildProcess();
-	CHAR fileName[BUFSIZE] = { 0, };
+	TCHAR fileName[BUFSIZE] = { 0, };
 	while (true)
 	{
 		//scanf("%s", fileName);
 		printf("[Parent][Input File Name] :");
-		gets(fileName);
+		//gets(fileName);
+		_tscanf(_T("%s"), fileName);
 		// 자식의 STDIN의 read handle에 write
 		WriteToPipe(fileName);
 
 		// 자식의 STDOUT의 write handle로 부터 받은 read data
 		ReadFromPipe();
 
-		if (strcmp(fileName, "quit") == 0)
+		if (_tcscmp(fileName, _T("quit")) == 0)
 			break;
 
 	}
 
 	// 자식 프로세스에 다보냈으면 핸들 닫기
 	if (!CloseHandle(g_hChildStd_IN_Wr))
-		ErrorExit(TEXT("StdInWr CloseHandle"));
+		ErrorExit(_T("StdInWr CloseHandle"));
 
 
 	wprintf(L"\n->End of parent execution.\n");
@@ -76,7 +77,7 @@ int _tmain(int argc, TCHAR *argv[])
 
 void CreateChildProcess()
 {
-	TCHAR szCmdline[] = TEXT("stdC");
+	TCHAR szCmdline[] = _T("stdC");
 	PROCESS_INFORMATION piProcInfo = { 0, }; // PROCESS_INFORMATION 0으로 초기화
 	STARTUPINFO siStartInfo = { sizeof(STARTUPINFO), }; // STARTUPINFO 0으로 초기화
 	BOOL bSuccess = FALSE;
@@ -100,7 +101,7 @@ void CreateChildProcess()
 		&piProcInfo);  // PROCESS_INFORMATION 
 
 	if (!bSuccess)
-		ErrorExit(TEXT("CreateProcess"));
+		ErrorExit(_T("CreateProcess"));
 	else
 	{
 		// 자식 프로세스가 바로 종료 되도록 Process, Thread, stdout/in
@@ -111,14 +112,15 @@ void CreateChildProcess()
 	}
 }
 
-void WriteToPipe(PCHAR chBuf) // 자식 프로세스로 STDIN으로 정보 던지기
+void WriteToPipe(PTSTR chBuf) // 자식 프로세스로 STDIN으로 정보 던지기
 {
 	DWORD dwRead, dwWritten;
 	BOOL bSuccess = FALSE;
 
 	printf("[Parent][Send] : %s\n", chBuf);
 	// stdin pipe의 write handle에 버퍼 내용과 크기 넣고 쓴 크기 dwWritten에 반환
-	bSuccess = WriteFile(g_hChildStd_IN_Wr, chBuf, strlen(chBuf), &dwWritten, NULL);
+	// 문자\0 + 1 * TCHAR
+	bSuccess = WriteFile(g_hChildStd_IN_Wr, chBuf, (_tcslen(chBuf) + 1)*sizeof(TCHAR), &dwWritten, NULL);
 }
 
 void ReadFromPipe(void) // 자식에서 STDOUT으로 나오는 정보 가져오기
@@ -131,7 +133,7 @@ void ReadFromPipe(void) // 자식에서 STDOUT으로 나오는 정보 가져오기
 	printf("[Parent][Receive] : ");
 	for (;;)
 	{
-		bSuccess = ReadFile(g_hChildStd_OUT_Rd, chBuf, BUFSIZE, &dwRead, NULL);
+		bSuccess = ReadFile(g_hChildStd_OUT_Rd, chBuf, sizeof(chBuf) - sizeof(TCHAR) * 1, &dwRead, NULL);
 		if (!bSuccess) break;
 		if ((chBuf[dwRead - 4] == 'C'
 			&& chBuf[dwRead - 3] == 'E'

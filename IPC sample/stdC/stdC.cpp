@@ -1,13 +1,14 @@
 #include <windows.h>
 #include <stdio.h>
 #include <string.h>
+#include <tchar.h>
 #include <strsafe.h>
 
 #define BUFSIZE 4096 
 
 int main(void)
 {
-	CHAR chBuf[BUFSIZE] = { 0 };
+	TCHAR chBuf[BUFSIZE] = { 0 };
 	DWORD dwRead, dwWritten;
 	HANDLE hStdin, hStdout;
 	BOOL bSuccess;
@@ -17,7 +18,7 @@ int main(void)
 	hStdin = GetStdHandle(STD_INPUT_HANDLE);
 	if ((hStdout == INVALID_HANDLE_VALUE) || (hStdin == INVALID_HANDLE_VALUE))
 		ExitProcess(1);
-	CHAR chBufCopy[BUFSIZE];
+	TCHAR chBufCopy[BUFSIZE];
 	while (true)
 	{
 		// STDIN으로 들어오는 데이터 버퍼에 저장
@@ -26,23 +27,23 @@ int main(void)
 			WriteFile(hStdout, "recieve error filename\n", strlen("recieve error filename\n"), &dwWritten, NULL);
 			return 0;
 		}
-		StringCchCopyA(chBufCopy, dwRead+1, chBuf);
+		StringCchCopyW(chBufCopy, dwRead+1, chBuf);
 		//WriteFile(hStdout, "[Child][Receive] : ", strlen("[Child][Receive] : "), &dwWritten, NULL);
 		//WriteFile(hStdout, chBufCopy, strlen(chBufCopy), &dwWritten, NULL);
 		//WriteFile(hStdout, "\n", 1, &dwWritten, NULL);
 		
-		if (strcmp(chBufCopy, "quit") == 0){
+		if (_tcscmp(chBufCopy, _T("quit")) == 0){
 			break;
 		}
 			
-		int nLen = MultiByteToWideChar(CP_ACP, 0, chBufCopy, strlen(chBufCopy), NULL, NULL);
-		WCHAR *fileName = (WCHAR*)malloc(nLen * sizeof(WCHAR));
-		MultiByteToWideChar(CP_ACP, 0, chBufCopy, strlen(chBufCopy), fileName, nLen);
-		fileName[dwRead] = '\0';
+		//int nLen = MultiByteToWideChar(CP_ACP, 0, chBufCopy, strlen(chBufCopy), NULL, NULL);
+		//WCHAR *fileName = (WCHAR*)malloc(nLen * sizeof(WCHAR));
+		//MultiByteToWideChar(CP_ACP, 0, chBufCopy, strlen(chBufCopy), fileName, nLen);
+		//fileName[dwRead] = '\0';
 
 		// 파일 읽어서 부모에게 넘겨주기
 		hInputFile = CreateFile(
-			fileName,
+			chBufCopy,
 			GENERIC_READ,
 			0,
 			NULL,
@@ -51,7 +52,7 @@ int main(void)
 			NULL);
 
 		if (hInputFile == INVALID_HANDLE_VALUE) {
-			bSuccess = WriteFile(hStdout, "Cannnot Read File", strlen("Cannnot Read File"), &dwWritten, NULL);
+			bSuccess = WriteFile(hStdout, "Cannnot Read File", strlen("Cannnot Read File") + 1, &dwWritten, NULL);
 			bSuccess = WriteFile(hStdout, "\nCEND", strlen("\nCEND"), &dwWritten, NULL);
 			continue;
 			//return 0;
@@ -75,8 +76,8 @@ int main(void)
 	
 
 	// STDOUT 핸들에 chBuf 내용 쓰기
-	char end[] = "\n child process end \n";
-	bSuccess = WriteFile(hStdout, end, strlen(end), &dwWritten, NULL);
+	TCHAR end[] = _T("\n child process end \n");
+	bSuccess = WriteFile(hStdout, end, (_tcslen(end) + 1) * sizeof(TCHAR), &dwWritten, NULL);
 
 	return 0;
 }
